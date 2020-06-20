@@ -1,5 +1,4 @@
-import pyreadr
-import random
+import tools
 import numpy as np
 import math
 import scipy.linalg as scp
@@ -7,21 +6,6 @@ import matplotlib.pyplot as plt
 import time
 import kNN
 import cv2
-
-
-
-#array = (array - array min) / (array max - array min)
-def normalize(data):
-    centered = data - np.min(data, axis=0)
-    normalized = centered / np.max(centered, axis=0)
-    return normalized
-
-
-#array = ( array - arraymean ) / array std dev
-def standardize(data):
-    centered = data - np.mean(data, axis=0)
-    standardized = centered / np.std(centered, axis=0)
-    return standardized
 
 def pareto_plot(sorted_data, x="", y ="", title="", as_percent=False, save_as=None):
 
@@ -114,8 +98,10 @@ class PCA:
 def task_2_1_1():
     print("Start of task 2.1.1")
     #read data
-    data, data_size = kNN.read_all_in("venv/flattened_all.Rds", True)
-
+    data = np.load("data/flattened_all.npy")
+    print("Read file with shape ", data.shape)
+    data_size = data.shape
+    data = np.reshape(data, [40000, 325])
 
     #do PCA on the data
     myPCA = PCA(data[:, 1:])
@@ -141,12 +127,12 @@ def kNN_iterative_accuracy_test(data_dict, k, iterations, groups=None, verbose=F
     accuracies = np.squeeze(accuracies)
     for i in range (0, iterations, 1):
         for keys in data_dict.keys():
-            val, train = kNN.rnd_split(data_dict[keys], groups, verbose=False)
+            val, train = tools.rnd_split(data_dict[keys], groups, verbose=False)
             gt = val[:,0]
             mykNN = kNN.kNN(train)
             pred = mykNN.mass_arg_predict(val, k, verbose=False)
             pred = np.squeeze(pred, axis=2)
-            accuracy, _, _ = kNN.evaluate(pred, gt)
+            accuracy, _, _ = tools.evaluate(pred, gt)
 
             accuracies[i] = accuracy
     if verbose:
@@ -158,7 +144,10 @@ def kNN_iterative_accuracy_test(data_dict, k, iterations, groups=None, verbose=F
 def task_2_1_23():
     print("Start of task 2.1.2/3")
     #read data
-    data, data_size = kNN.read_all_in("venv/flattened_all.Rds", True)
+    data = np.load("data/flattened_all.npy")
+    print("Read file with shape ", data.shape)
+    data_size = data.shape
+    data = np.reshape(data, [40000, 325])
 
     #do PCA on the data
     myPCA = PCA(data[:,1:])
@@ -190,13 +179,13 @@ def task_2_1_23():
     k = range(1, 11)
     for keys in PC_data.keys():
         print("kNN for ", keys, "% variance explained")
-        val, train = kNN.rnd_split(PC_data[keys], [50, 50], verbose=False)
+        val, train = tools.rnd_split(PC_data[keys], [50, 50], verbose=False)
         gt = val[:,0]
         mykNN = kNN.kNN(train)
         pred = mykNN.mass_arg_predict(val, k, verbose=False)
         print(pred.shape, gt.shape)
         pred = np.squeeze(pred, axis=2)
-        accuracy, _, _ = kNN.evaluate(pred, gt)
+        accuracy, _, _ = tools.evaluate(pred, gt)
         print(accuracy)
 
         kNN.k_plot((keys + "% PC based kNN "), k, accuracy*100, yticks=(range(93, 101, 1)), ylabel="Accuracy [%]")
@@ -228,7 +217,7 @@ def task_2_2_nb(data):
     print("using normalized data:")
 
     #do normalization
-    data[:,1:] = normalize(data[:,1:])                                      #the magic
+    data[:,1:] = tools.normalize(data[:,1:])                                      #the magic
 
     #do PCA on the data
     myPCA = PCA(data[:,1:])
@@ -256,7 +245,7 @@ def task_2_2_na(data):
     PC_data = {}
     for keys in tmp.keys():
         labels = np.expand_dims(data[:,0], axis=1)
-        PC_data[keys] = np.concatenate((labels, normalize(tmp[keys])), axis=1)
+        PC_data[keys] = np.concatenate((labels, tools.normalize(tmp[keys])), axis=1)
 
     return kNN_iterative_accuracy_test(PC_data, [5], 10, groups=[50, 50], verbose=True)
 
@@ -265,7 +254,7 @@ def task_2_2_sb(data):
     print("using standardized data:")
 
     #do normalization
-    data[:,1:] = standardize(data[:,1:])
+    data[:,1:] = tools.standardize(data[:,1:])
 
     #do PCA on the data
     myPCA = PCA(data[:,1:])
@@ -293,7 +282,7 @@ def task_2_2_sa(data):
     PC_data = {}
     for keys in tmp.keys():
         labels = np.expand_dims(data[:,0], axis=1)
-        PC_data[keys] = np.concatenate((labels, standardize(tmp[keys])), axis=1)
+        PC_data[keys] = np.concatenate((labels, tools.standardize(tmp[keys])), axis=1)
 
     return kNN_iterative_accuracy_test(PC_data, [5], 10, groups=[50, 50], verbose=True)
 
@@ -302,7 +291,10 @@ def task_2_2():
     print("Start of task 2.2")
 
     #read data
-    data, data_size = kNN.read_all_in("venv/flattened_all.Rds", False)
+    data = np.load("data/flattened_all.npy")
+    print("Read file with shape ", data.shape)
+    data_size = data.shape
+    data = np.reshape(data, [40000, 325])
 
     accuracies = np.zeros(5)
     stddev = np.zeros(5)
@@ -328,7 +320,10 @@ def task_2_3():
     print("Start of task 2.3")
 
    #read data
-    data, data_size = kNN.read_all_in("venv/flattened_all.Rds", False)
+    data = np.load("data/flattened_all.npy")
+    print("Read file with shape ", data.shape)
+    data_size = data.shape
+    data = np.reshape(data, [40000, 325])
 
     accuracies_smoothing = []
     stddev_smoothing = []
@@ -372,7 +367,10 @@ def task_2_4():
     print("Start of task 2.4")
 
     #read data
-    data, data_size = kNN.read_all_in("venv/flattened_all.Rds", False)
+    data = np.load("data/flattened_all.npy")
+    print("Read file with shape ", data.shape)
+    data_size = data.shape
+    data = np.reshape(data, [40000, 325])
 
 
 #plot one of each cipher
@@ -419,9 +417,10 @@ def task_2_4():
 
 
 ###main
-task_2_1_1()
-task_2_1_23()
-task_2_2()
-task_2_3()
+#task_2_1_1()
+#task_2_1_23()
+#task_2_2()
+#task_2_3()
 
-task_2_4()
+#doesnt work
+#task_2_4()

@@ -1,40 +1,9 @@
-import pyreadr
 import random
 import numpy as np
 import math
 from scipy import stats
 import matplotlib.pyplot as plt
 import time
-
-
-def read_all_in(path_dot_rda, verbose=False):
-    data, data_size = read_Rda(path_dot_rda, verbose)
-    data = np.squeeze(data)
-
-    data = restore3D_Rda(data, [10, 4000, 325])
-    data = np.reshape(data, [40000, 325])
-    return data, data.shape
-
-
-
-#data structure
-#   id
-#       Xn n=(1-325) x1 = id, x>1 = pixelnr
-#           n=(0-3999) observationnr
-#               n=(0-9) GT class
-
-
-#read dumb ugly R data file
-def read_Rda(path_to_Rda, verbose=False):
-    Rdata = pyreadr.read_r(path_to_Rda) # also works for Rds
-    while len(Rdata.keys()) == 1:
-        keys = np.array(list(Rdata.keys()))
-        Rdata = Rdata[keys[0]]
-    npdata = np.array(Rdata, dtype=np.double)
-    data_size = npdata.shape
-    if verbose:
-        print("Sample size is ", npdata.shape)
-    return npdata, data_size
 
 
 #Takes a flattened list of matrices from R and restores the dimensions
@@ -74,10 +43,6 @@ def rnd_split(arr, group_percentiles, verbose=False):
             print("Created group ", groups, " with ", new_group.shape[0], " elements.")
     return out
 
-#de-mean data
-def demean(arr):
-    pass
-
 #compare predictions to ground truth
 def evaluate(prediction, ground_truth, verbose=False):
     correct = (prediction == ground_truth.reshape(-1, 1))
@@ -89,7 +54,7 @@ def evaluate(prediction, ground_truth, verbose=False):
     return accuracy, sums, correct
 
 #make and save plot
-def k_plot(title, k, y, yticks=(0, 101, 5), ylabel="Accuracy"):
+def k_plot(title, k, y, yticks=(0, 100, 5), ylabel="Accuracy"):
     plt.figure()
     plt.plot(k, y, '--bo')
     plt.ylabel(ylabel, fontsize=20)
@@ -193,7 +158,8 @@ class kNN:
 ###1.4.1/1.4.2 - 50/50 split at varying k
 def task_1_4_12():
     #read data
-    data, data_size = read_Rda("id100.Rda", True)
+    data = np.load("data/id100.npy")
+    print("Read file with shape ", data.shape)
 
     #split data
     val, train = rnd_split(data, [50, 50], verbose=True)
@@ -244,7 +210,7 @@ def task_1_4_3():
     accuracies = []
     for i in range(10):
         #read data
-        data, data_size = read_Rda("id100.Rda", verbose=False)
+        data = np.load("data/id100.npy")
         #split data
         val, train = rnd_split(data, [10, 90], verbose=False)
         #train kNN
@@ -265,10 +231,8 @@ def task_1_4_3():
 def task_1_4_4_all_persons():
     print("1_4_4_all_persons")
     #read data
-    data, data_size = read_Rda("flattened_all.Rds", True)
-    data = np.squeeze(data)
-
-    data = restore3D_Rda(data, [10, 4000, 325])
+    data = np.load("data/flattened_all.npy")
+    print("Read file with shape ", data.shape)
     data = np.reshape(data, [40000, 325])
 
     val, train = rnd_split(data, [50, 50], verbose=False)
@@ -314,10 +278,8 @@ def task_1_4_4_all_persons():
 def task_1_4_4_disjunct():
     print("1_4_4_disjunct")
     #read data
-    data, data_size = read_Rda("flattened_all.Rds", True)
-    np.squeeze(data)
-
-    data = restore3D_Rda(data, [10, 4000, 325])
+    data = np.load("data/flattened_all.npy")
+    print("Read file with shape ", data.shape)
     data = np.reshape(data, [40000, 325])
 
     val   = data[:int(data.shape[0]/2) , :]
